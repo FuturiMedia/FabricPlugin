@@ -39,9 +39,6 @@ import java.util.Iterator;
 
 import io.fabric.sdk.android.Fabric;
 
-import com.twitter.sdk.android.Twitter;
-import com.twitter.sdk.android.core.TwitterAuthConfig;
-
 public class FabricPlugin extends CordovaPlugin {
 	private final String pluginName = "FabricPlugin";
 
@@ -58,9 +55,7 @@ public class FabricPlugin extends CordovaPlugin {
 		};
 		final CrashlyticsCore core = new CrashlyticsCore.Builder().listener(listener).build();
 
-		TwitterAuthConfig authConfig = new TwitterAuthConfig(preferences.getString("TwitterConsumerKey", ""), preferences.getString("TwitterConsumerSecret", ""));
-
-		Fabric.with(this.cordova.getActivity().getApplicationContext(), new Crashlytics.Builder().core(core).build(), new Answers(), new Twitter(authConfig));
+		Fabric.with(this.cordova.getActivity().getApplicationContext(), new Crashlytics.Builder().core(core).build(), new Answers());
 	}
 
 	@Override
