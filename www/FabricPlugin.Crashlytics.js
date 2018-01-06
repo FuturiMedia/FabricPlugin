@@ -15,6 +15,11 @@ var FabricCrashlytics = (function () {
             window.fabric.core.execPlugin('addLog', [message]);
         }
     }, {
+        key: 'didItCrash',
+        value: function didItCrash(callback) {
+            window.fabric.core.execPlugin('didItCrash', [], callback);
+        }
+    }, {
         key: 'sendCrash',
         value: function sendCrash() {
             window.fabric.core.execPlugin('sendCrash', []);

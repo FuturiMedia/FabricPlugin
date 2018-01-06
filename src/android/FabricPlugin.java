@@ -2,11 +2,15 @@ package com.sarriaroman.fabric;
 
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaPlugin;
+import org.apache.cordova.CordovaWebView;
+import org.apache.cordova.PluginResult;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import com.crashlytics.android.Crashlytics;
+import com.crashlytics.android.core.CrashlyticsCore;
+import com.crashlytics.android.core.CrashlyticsListener;
 import com.crashlytics.android.answers.AddToCartEvent;
 import com.crashlytics.android.answers.Answers;
 import com.crashlytics.android.answers.AnswersEvent;
@@ -23,6 +27,7 @@ import com.crashlytics.android.answers.ShareEvent;
 import com.crashlytics.android.answers.SignUpEvent;
 import com.crashlytics.android.answers.StartCheckoutEvent;
 
+import android.app.Activity;
 import android.util.Log;
 
 import java.lang.reflect.Method;
@@ -34,19 +39,37 @@ import java.util.Iterator;
 
 import io.fabric.sdk.android.Fabric;
 
+import com.twitter.sdk.android.Twitter;
+import com.twitter.sdk.android.core.TwitterAuthConfig;
+
 public class FabricPlugin extends CordovaPlugin {
 	private final String pluginName = "FabricPlugin";
 
+	private Boolean didCrashDuringPreviousExecution = false;
+
 	@Override
 	protected void pluginInitialize() {
-		Fabric.with(this.cordova.getActivity().getApplicationContext(), new Crashlytics(), new Answers());
+		final CordovaWebView webView = this.webView;
+		final CrashlyticsListener listener = new CrashlyticsListener() {
+			@Override
+			public void crashlyticsDidDetectCrashDuringPreviousExecution() {
+				didCrashDuringPreviousExecution = true;
+			}
+		};
+		final CrashlyticsCore core = new CrashlyticsCore.Builder().listener(listener).build();
+
+		TwitterAuthConfig authConfig = new TwitterAuthConfig(preferences.getString("TwitterConsumerKey", ""), preferences.getString("TwitterConsumerSecret", ""));
+
+		Fabric.with(this.cordova.getActivity().getApplicationContext(), new Crashlytics.Builder().core(core).build(), new Answers(), new Twitter(authConfig));
 	}
 
 	@Override
 	public boolean execute(final String action, final JSONArray data, final CallbackContext callbackContext) {
 		Log.d(pluginName, pluginName + " called with options: " + data);
 
-		if (action.equals("addLog")) {
+		if (action.equals("didItCrash")) {
+			didItCrash(data, callbackContext);
+		} else if (action.equals("addLog")) {
 			addLog(data, callbackContext);
 		} else if (action.equals("sendCrash")) {
 			sendCrash(data, callbackContext);
@@ -99,6 +122,13 @@ public class FabricPlugin extends CordovaPlugin {
 		}
 
 		return true;
+	}
+
+	private void didItCrash(final JSONArray data,
+						final CallbackContext callbackContext) {
+
+		PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, didCrashDuringPreviousExecution);
+		callbackContext.sendPluginResult(pluginResult);
 	}
 
 	/* Crashlytics Events */
